@@ -1,0 +1,8 @@
+Coloque aquí el driver de MySQL con EXACTAMENTE este nombre:
+
+    libs/mysql-connector-j.jar
+
+Descarga: https://dev.mysql.com/downloads/connector/j/  (opción "Platform Independent", ZIP;
+dentro está mysql-connector-j-X.Y.Z.jar -> renómbrelo a mysql-connector-j.jar).
+
+Una sola persona lo descarga y lo sube a git; los demás lo reciben con el pull.
