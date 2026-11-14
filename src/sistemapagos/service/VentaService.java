@@ -11,7 +11,7 @@ import sistemapagos.model.Venta;
 import sistemapagos.security.Sesion;
 import sistemapagos.validation.Validador;
 
-/** Proceso 1: gestión de ventas. (Módulo de la persona B) */
+/** Proceso 1: gestión de ventas. (Módulo de Valeria) */
 public class VentaService {
     private final VentaDAO ventaDAO;
 
@@ -19,20 +19,26 @@ public class VentaService {
         this.ventaDAO = ventaDAO;
     }
 
-    /** 1.1 + 1.2: registrar y validar. */
-    public Venta registrar(String codigo, String descripcion, String importeTexto) {
+    /** 1.1 + 1.2: registrar y validar, con la fecha capturada por el usuario (AAAA-MM-DD). */
+    public Venta registrar(String codigo, String descripcion, String importeTexto, String fechaTexto) {
         Sesion.requerirAutenticacion();
         String cod = Validador.requerirTexto(codigo, "Código", 30);
         String desc = Validador.requerirTexto(descripcion, "Descripción", 255);
         BigDecimal importe = Validador.parsearImporte(importeTexto, "Importe");
+        LocalDate fecha = Validador.parsearFecha(fechaTexto, "Fecha");
         if (ventaDAO.existeCodigo(cod)) {
             throw new NegocioException("Ya existe una venta con el código \"" + cod + "\".");
         }
-        return ventaDAO.insertar(new Venta(cod, desc, importe, LocalDate.now()));
+        return ventaDAO.insertar(new Venta(cod, desc, importe, fecha));
     }
 
-    /** 1.5: modificar solo si la venta está pendiente. */
-    public Venta modificar(int id, String codigo, String descripcion, String importeTexto) {
+    /** Compatibilidad: registra con la fecha de hoy. */
+    public Venta registrar(String codigo, String descripcion, String importeTexto) {
+        return registrar(codigo, descripcion, importeTexto, LocalDate.now().toString());
+    }
+
+    /** 1.5: modificar solo si la venta está pendiente (incluye la fecha). */
+    public Venta modificar(int id, String codigo, String descripcion, String importeTexto, String fechaTexto) {
         Sesion.requerirAutenticacion();
         Venta venta = obtener(id);
         if (!venta.puedeModificarse()) {
@@ -41,14 +47,22 @@ public class VentaService {
         String cod = Validador.requerirTexto(codigo, "Código", 30);
         String desc = Validador.requerirTexto(descripcion, "Descripción", 255);
         BigDecimal importe = Validador.parsearImporte(importeTexto, "Importe");
+        LocalDate fecha = Validador.parsearFecha(fechaTexto, "Fecha");
         if (!cod.equals(venta.getCodigo()) && ventaDAO.existeCodigo(cod)) {
             throw new NegocioException("Ya existe una venta con el código \"" + cod + "\".");
         }
         venta.setCodigo(cod);
         venta.setDescripcion(desc);
         venta.setImporte(importe);
+        venta.setFecha(fecha);
         ventaDAO.actualizar(venta);
         return venta;
+    }
+
+    /** Compatibilidad: modifica sin cambiar la fecha. */
+    public Venta modificar(int id, String codigo, String descripcion, String importeTexto) {
+        Venta actual = obtener(id);
+        return modificar(id, codigo, descripcion, importeTexto, actual.getFecha().toString());
     }
 
     /** Eliminar solo si está pendiente y sin transacciones asociadas (la base lo garantiza con FK). */
@@ -89,6 +103,15 @@ public class VentaService {
         LocalDate fin = hasta == null ? desde : hasta;
         if (fin.isBefore(desde)) throw new ValidacionException("La fecha final no puede ser anterior a la inicial.");
         return ventaDAO.buscarPorFecha(desde, fin);
+    }
+
+    /** 1.4 desde texto de la pantalla: "hasta" puede venir vacío. */
+    public List<Venta> buscarPorFecha(String desdeTexto, String hastaTexto) {
+        Sesion.requerirAutenticacion();
+        LocalDate desde = Validador.parsearFecha(desdeTexto, "Fecha");
+        boolean sinHasta = hastaTexto == null || hastaTexto.trim().isEmpty();
+        LocalDate hasta = sinHasta ? null : Validador.parsearFecha(hastaTexto, "Fecha final");
+        return buscarPorFecha(desde, hasta);
     }
 
     public Venta obtener(int id) {
