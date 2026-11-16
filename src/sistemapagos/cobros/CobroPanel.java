@@ -6,7 +6,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.util.List;
 import javax.swing.*;
-import sistemadepagos.cobros.CobroPersistenciaException;
+import sistemapagos.cobros.CobroPersistenciaException;
 
 /** Panel de pago: selección de venta y método, datos específicos y procesamiento. */
 public class CobroPanel extends JPanel {

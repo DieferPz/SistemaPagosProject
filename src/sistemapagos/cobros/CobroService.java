@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import sistemadepagos.cobros.CobroPersistenciaException;
+import sistemapagos.cobros.CobroPersistenciaException;
 import sistemapagos.security.Sesion;
 
 /**
